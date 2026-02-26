@@ -22,7 +22,44 @@ overflow:hidden;
 <div id="cesiumContainer"></div>
 
 <script>
-var viewer = new Cesium.Viewer('cesiumContainer');
+Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4OWFkNmViZS0yMmYyLTQ2NzItODVlZS0xMGU3MDI0YWFhMjIiLCJpZCI6Mzk0OTM3LCJpYXQiOjE3NzIxMjI0ODR9.P6QY5KViwgQHWPiPI3aFH2zShJWER_kIAKWxdptk8YM';
+
+// Create viewer with default imagery (stable)
+var viewer = new Cesium.Viewer('cesiumContainer', {
+animation: true,
+timeline: true,
+baseLayerPicker: true,
+terrainProvider: new Cesium.EllipsoidTerrainProvider() // safe terrain
+});
+
+// Load earthquake data
+fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson")
+.then(res => res.json())
+.then(data => {
+data.features.forEach(eq => {
+const coords = eq.geometry.coordinates;
+const mag = eq.properties.mag || 0;
+
+// magnitude color logic
+let color = Cesium.Color.YELLOW;
+if(mag > 4) color = Cesium.Color.ORANGE;
+if(mag > 6) color = Cesium.Color.RED;
+
+viewer.entities.add({
+position: Cesium.Cartesian3.fromDegrees(coords[0], coords[1]),
+point: {
+pixelSize: 8,
+color: color,
+outlineColor: Cesium.Color.WHITE,
+outlineWidth: 1
+},
+description: `
+<b>${eq.properties.place}</b><br>
+Magnitude: ${mag}
+`
+});
+});
+});
 </script>
 
 </body>
