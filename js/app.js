@@ -1,8 +1,8 @@
 Cesium.Ion.defaultAccessToken = 'PASTE_TOKEN_HERE';
 
 var viewer = new Cesium.Viewer('cesiumContainer',{
-animation:true,
-timeline:true,
+animation:false,
+timeline:false,
 baseLayerPicker:true,
 terrainProvider:new Cesium.EllipsoidTerrainProvider()
 });
@@ -10,6 +10,15 @@ terrainProvider:new Cesium.EllipsoidTerrainProvider()
 /* PERFORMANCE MODE */
 viewer.scene.requestRenderMode = true;
 viewer.scene.maximumRenderTimeChange = Infinity;
+
+/* entity collection for clustering */
+const dataSource = new Cesium.CustomDataSource("quakes");
+viewer.dataSources.add(dataSource);
+
+/* clustering */
+dataSource.clustering.enabled = true;
+dataSource.clustering.pixelRange = 40;
+dataSource.clustering.minimumClusterSize = 3;
 
 let alertBox=document.getElementById("alerts");
 let stats=document.getElementById("stats");
@@ -19,10 +28,10 @@ fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson
 .then(res=>res.json())
 .then(data=>{
 
-/* SORT + LIMIT strongest anomalies (performance boost) */
+/* SORT strongest first */
 const quakes=data.features
 .sort((a,b)=>(b.properties.mag||0)-(a.properties.mag||0))
-.slice(0,60);
+.slice(0,120); // safe limit
 
 quakes.forEach(eq=>{
 
@@ -38,57 +47,44 @@ if(mag>4) color=Cesium.Color.ORANGE;
 if(mag>6) color=Cesium.Color.RED;
 
 /* main marker */
-viewer.entities.add({
+dataSource.entities.add({
 position:Cesium.Cartesian3.fromDegrees(coords[0],coords[1]),
 point:{
-pixelSize:6,
+pixelSize:5,
 color:color,
 outlineColor:Cesium.Color.WHITE,
-outlineWidth:1
+outlineWidth:1,
+scaleByDistance:new Cesium.NearFarScalar(1e2,2.0,1e7,0.5)
 },
 description:`<b>${eq.properties.place}</b><br>Magnitude: ${mag}`
 });
 
-/* anomaly ring */
-viewer.entities.add({
+/* only strong quakes get animation */
+if(mag>5){
+
+dataSource.entities.add({
 position:Cesium.Cartesian3.fromDegrees(coords[0],coords[1]),
 ellipse:{
 semiMinorAxis:20000,
 semiMajorAxis:20000,
-material:color.withAlpha(0.25)
+material:color.withAlpha(0.2)
 }
 });
 
-/* radar stripe only strong quakes */
-if(mag>5){
-viewer.entities.add({
+/* pulse optimized */
+dataSource.entities.add({
 position:Cesium.Cartesian3.fromDegrees(coords[0],coords[1]),
 ellipse:{
-semiMinorAxis:50000,
-semiMajorAxis:50000,
-material:new Cesium.StripeMaterialProperty({
-evenColor:color.withAlpha(0.35),
-oddColor:Cesium.Color.TRANSPARENT,
-repeat:1
-})
-}
-});
-}
-
-/* pulse only medium+ quakes */
-if(mag>4){
-viewer.entities.add({
-position:Cesium.Cartesian3.fromDegrees(coords[0],coords[1]),
-ellipse:{
-semiMinorAxis:new Cesium.CallbackProperty(()=>20000+(Date.now()%2000)*20,false),
-semiMajorAxis:new Cesium.CallbackProperty(()=>20000+(Date.now()%2000)*20,false),
+semiMinorAxis:new Cesium.CallbackProperty(()=>20000+(Date.now()%2000)*10,false),
+semiMajorAxis:new Cesium.CallbackProperty(()=>20000+(Date.now()%2000)*10,false),
 material:color.withAlpha(0.15)
 }
 });
+
 }
 
-/* alert UI */
-if(mag>4 && alertBox){
+/* alert UI only strong */
+if(mag>5 && alertBox){
 let div=document.createElement("div");
 div.className="alert";
 div.innerHTML=`<b>${eq.properties.place}</b><br>Mag: ${mag}`;
@@ -97,11 +93,27 @@ alertBox.prepend(div);
 
 });
 
-/* auto focus biggest quake */
+/* focus biggest quake */
 const biggest=quakes[0];
 const bc=biggest.geometry.coordinates;
 viewer.camera.flyTo({
 destination:Cesium.Cartesian3.fromDegrees(bc[0],bc[1],2000000)
 });
 
+});
+
+/* camera distance optimization */
+viewer.camera.changed.addEventListener(()=>{
+const height=viewer.camera.positionCartographic.height;
+
+/* zoomed out → hide animations */
+if(height>5000000){
+dataSource.entities.values.forEach(e=>{
+if(e.ellipse) e.show=false;
+});
+}else{
+dataSource.entities.values.forEach(e=>{
+if(e.ellipse) e.show=true;
+});
+}
 });
