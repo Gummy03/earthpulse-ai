@@ -1,11 +1,15 @@
 Cesium.Ion.defaultAccessToken = 'PASTE_TOKEN_HERE';
 
-var viewer = new Cesium.Viewer('cesiumContainer', {
+var viewer = new Cesium.Viewer('cesiumContainer',{
 animation:true,
 timeline:true,
 baseLayerPicker:true,
 terrainProvider:new Cesium.EllipsoidTerrainProvider()
 });
+
+let alertBox=document.getElementById("alerts");
+let stats=document.getElementById("stats");
+let count=0;
 
 fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson")
 .then(res=>res.json())
@@ -13,38 +17,30 @@ fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson
 
 data.features.forEach(eq=>{
 
-const coords = eq.geometry.coordinates;
-const mag = eq.properties.mag || 0;
+count++;
+stats.innerHTML="Anomalies: "+count;
 
-// magnitude color
-let color = Cesium.Color.YELLOW;
-if(mag>4) color = Cesium.Color.ORANGE;
-if(mag>6) color = Cesium.Color.RED;
+const coords=eq.geometry.coordinates;
+const mag=eq.properties.mag||0;
+
+let color=Cesium.Color.YELLOW;
+if(mag>4) color=Cesium.Color.ORANGE;
+if(mag>6) color=Cesium.Color.RED;
 
 // main marker
 viewer.entities.add({
 position:Cesium.Cartesian3.fromDegrees(coords[0],coords[1]),
-point:{
-pixelSize:8,
-color:color,
-outlineColor:Cesium.Color.WHITE,
-outlineWidth:1
-},
+point:{pixelSize:8,color:color,outlineColor:Cesium.Color.WHITE,outlineWidth:1},
 description:`<b>${eq.properties.place}</b><br>Magnitude: ${mag}`
 });
 
 // anomaly ring
 viewer.entities.add({
 position:Cesium.Cartesian3.fromDegrees(coords[0],coords[1]),
-ellipse:{
-semiMinorAxis:20000,
-semiMajorAxis:20000,
-material:color.withAlpha(0.3),
-height:0
-}
+ellipse:{semiMinorAxis:20000,semiMajorAxis:20000,material:color.withAlpha(0.3)}
 });
 
-// radar stripe scan
+// radar stripe
 viewer.entities.add({
 position:Cesium.Cartesian3.fromDegrees(coords[0],coords[1]),
 ellipse:{
@@ -58,23 +54,27 @@ repeat:1
 }
 });
 
-// pulsing radar animation
+// pulse
 viewer.entities.add({
 position:Cesium.Cartesian3.fromDegrees(coords[0],coords[1]),
 ellipse:{
-semiMinorAxis:new Cesium.CallbackProperty(function(){
-return 20000 + (Date.now()%2000)*20;
-},false),
-semiMajorAxis:new Cesium.CallbackProperty(function(){
-return 20000 + (Date.now()%2000)*20;
-},false),
+semiMinorAxis:new Cesium.CallbackProperty(()=>20000+(Date.now()%2000)*20,false),
+semiMajorAxis:new Cesium.CallbackProperty(()=>20000+(Date.now()%2000)*20,false),
 material:color.withAlpha(0.2)
 }
 });
 
+// alert UI
+if(mag>4){
+let div=document.createElement("div");
+div.className="alert";
+div.innerHTML=`<b>${eq.properties.place}</b><br>Mag: ${mag}`;
+alertBox.prepend(div);
+}
+
 });
 
-// auto focus biggest quake
+// focus biggest quake
 const biggest=data.features.reduce((a,b)=>
 (a.properties.mag||0)>(b.properties.mag||0)?a:b);
 

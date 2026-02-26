@@ -6,3 +6,35 @@ padding:0;
 overflow:hidden;
 background:black;
 }
+
+/* futuristic side panel */
+.side-panel{
+position:absolute;
+top:10px;
+right:10px;
+width:260px;
+height:80vh;
+background:rgba(0,0,0,0.5);
+backdrop-filter:blur(12px);
+border:1px solid rgba(0,255,255,0.3);
+border-radius:12px;
+padding:10px;
+color:#0ff;
+font-family:Arial;
+overflow:auto;
+z-index:999;
+}
+
+.side-panel h2{
+margin:0;
+font-size:20px;
+text-align:center;
+}
+
+.alert{
+margin:6px 0;
+padding:6px;
+background:rgba(0,255,255,0.1);
+border-left:3px solid #0ff;
+font-size:12px;
+}
