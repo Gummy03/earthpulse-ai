@@ -55,3 +55,31 @@ destination: Cesium.Cartesian3.fromDegrees(bc[0], bc[1], 2000000)
 });
 
 });
+
+// radar scan effect
+viewer.entities.add({
+position: Cesium.Cartesian3.fromDegrees(coords[0], coords[1]),
+ellipse:{
+semiMinorAxis:50000,
+semiMajorAxis:50000,
+material:new Cesium.StripeMaterialProperty({
+evenColor:color.withAlpha(0.4),
+oddColor:Cesium.Color.TRANSPARENT,
+repeat:1
+})
+}
+});
+
+
+viewer.entities.add({
+position: Cesium.Cartesian3.fromDegrees(coords[0], coords[1]),
+ellipse:{
+semiMinorAxis: new Cesium.CallbackProperty(function(time){
+return 20000 + (Date.now()%2000)*20;
+}, false),
+semiMajorAxis: new Cesium.CallbackProperty(function(time){
+return 20000 + (Date.now()%2000)*20;
+}, false),
+material: color.withAlpha(0.2)
+}
+});
