@@ -13,19 +13,37 @@
 
 <div id="cesiumContainer"></div>
 
-<div class="top-bar">EarthPulse AI</div>
+<div class="hud-grid"></div>
+<div class="radar-sweep"></div>
 
-<div class="left-panel">
-<h3>Anomaly Feed</h3>
+<div class="top-bar glow">EARTHPULSE AI — GLOBAL INTEL NETWORK</div>
+
+<div class="left-panel panel">
+<h3>ANOMALY FEED</h3>
 <div id="alerts"></div>
 </div>
 
-<div class="right-panel">
-<h3>Stats</h3>
+<div class="right-panel panel">
+<h3>SYSTEM STATUS</h3>
 <div id="stats">Anomalies: 0</div>
+<div class="indicator online">● ONLINE</div>
+<div class="indicator secure">● SECURE</div>
+<div class="indicator danger">● THREAT LEVEL: LOW</div>
 </div>
 
-<div class="bottom-bar">SYSTEM ONLINE</div>
+<div class="bottom-bar glow">SYSTEM ACTIVE</div>
+
+<div class="console panel">
+<h3>TERMINAL</h3>
+<div class="terminal-log">> Boot sequence initialized...</div>
+</div>
+
+<div class="legend panel">
+<h3>LEGEND</h3>
+<div class="legend-item red"></div> Major anomaly  
+<div class="legend-item orange"></div> Medium anomaly  
+<div class="legend-item yellow"></div> Minor anomaly
+</div>
 
 <script src="js/app.js"></script>
 </body>
